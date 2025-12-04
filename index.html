@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音樂比賽成績公告</title>
+    <style>
+        /* CSS 設定：全螢幕黑色背景，圖片置中 */
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
+        #slider { width: 100%; height: 100%; position: relative; display: flex; justify-content: center; align-items: center; }
+        
+        /* 圖片樣式 */
+        .slide {
+            position: absolute;
+            max-width: 100%; /* 寬度不超過螢幕 */
+            max-height: 100%; /* 高度不超過螢幕 */
+            object-fit: contain; /* 保持圖片比例 */
+            opacity: 0;
+            transition: opacity 1s ease-in-out; /* 淡入淡出動畫 */
+        }
+        
+        /* 顯示中的圖片 */
+        .slide.active { opacity: 1; z-index: 2; }
+        
+        /* Loading 文字 */
+        #status { 
+            color: #888; font-family: sans-serif; position: absolute; bottom: 10px; right: 10px; font-size: 12px; z-index: 10; 
+        }
+    </style>
+</head>
+<body>
+
+<div id="status">系統準備中...</div>
+<div id="slider">
+    </div>
+
+<script>
+    // ==========================================
+    // ▼▼▼ 請修改這裡 ▼▼▼
+    const GITHUB_USERNAME = 'hfuhsu108';  // 例如: 'teacher-wang'
+    const REPO_NAME = 'music-score-board';          // 例如: 'music-score-board'
+    // ▲▲▲ 修改結束 ▲▲▲
+    // ==========================================
+
+    const FOLDER_NAME = 'photos';
+    const SLIDE_DURATION = 5000;    // 每張顯示 5 秒
+    const CHECK_INTERVAL = 120000;  // 每 120 秒 (2分鐘) 檢查一次新照片
+    
+    // 系統變數
+    let images = [];
+    let currentIndex = 0;
+    let slideInterval;
+    const slider = document.getElementById('slider');
+    const statusDiv = document.getElementById('status');
+
+    // 1. 抓取圖片列表
+    async function fetchImages() {
+        // 加上時間戳記避免 API 快取 (timestamp trick)
+        const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FOLDER_NAME}?t=${new Date().getTime()}`;
+        
+        try {
+            statusDiv.innerText = '正在檢查新成績...';
+            const response = await fetch(apiUrl);
+            
+            if (!response.ok) {
+                if(response.status === 403) throw new Error("API 存取過於頻繁");
+                if(response.status === 404) throw new Error("找不到資料夾或設定錯誤");
+                throw new Error("連線錯誤");
+            }
+
+            const data = await response.json();
+            
+            // 過濾出圖片檔
+            const currentImageList = data
+                .filter(file => file.name.match(/\.(jpg|jpeg|png|gif)$/i))
+                .map(file => file.download_url);
+
+            if (currentImageList.length === 0) {
+                statusDiv.innerText = '資料夾內尚無圖片';
+                return;
+            }
+
+            // 比對是否有新圖片 (簡單比對數量或內容)
+            if (JSON.stringify(currentImageList) !== JSON.stringify(images)) {
+                console.log("發現新圖片清單，更新中...");
+                images = currentImageList;
+                renderSlider(); // 重新繪製
+                statusDiv.innerText = `已更新：共 ${images.length} 張`;
+            } else {
+                statusDiv.innerText = `監控中：共 ${images.length} 張 (無變動)`;
+            }
+
+        } catch (error) {
+            console.error(error);
+            statusDiv.innerText = `錯誤：${error.message}`;
+        }
+    }
+
+    // 2. 渲染圖片到 HTML
+    function renderSlider() {
+        slider.innerHTML = ''; // 清空
+        images.forEach((url, index) => {
+            const img = document.createElement('img');
+            img.src = url;
+            img.className = 'slide';
+            if (index === 0) img.className = 'slide active'; // 第一張先顯示
+            slider.appendChild(img);
+        });
+
+        // 重置輪播
+        currentIndex = 0;
+        startSlideshow();
+    }
+
+    // 3. 輪播邏輯
+    function startSlideshow() {
+        if (slideInterval) clearInterval(slideInterval);
+        if (images.length <= 1) return; 
+
+        slideInterval = setInterval(() => {
+            const slides = document.querySelectorAll('.slide');
+            if(slides.length === 0) return;
+
+            slides[currentIndex].classList.remove('active');
+            currentIndex = (currentIndex + 1) % slides.length;
+            slides[currentIndex].classList.add('active');
+        }, SLIDE_DURATION);
+    }
+
+    // 啟動
+    fetchImages();
+    // 設定定期檢查 (Polling)
+    setInterval(fetchImages, CHECK_INTERVAL);
+
+</script>
+</body>
+</html>
