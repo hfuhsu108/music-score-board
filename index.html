@@ -2,136 +2,244 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>音樂比賽成績公告</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>澎湖縣音樂比賽成績公告</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
     <style>
-        /* CSS 設定：全螢幕黑色背景，圖片置中 */
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
-        #slider { width: 100%; height: 100%; position: relative; display: flex; justify-content: center; align-items: center; }
-        
-        /* 圖片樣式 */
-        .slide {
+        /* --- 基礎設定 --- */
+        body, html { 
+            margin: 0; padding: 0; 
+            height: 100%; 
+            background-color: #f0f2f5; /* 淺灰底色，比較護眼 */
+            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+            overflow: hidden; /* 防止捲動條出現 */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- 1. 頂部標題列區塊 --- */
+        header {
+            background: #2c3e50; /* 深藍色專業感 */
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            flex-shrink: 0; /* 固定高度不被壓縮 */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+        }
+
+        /* --- 手機版字體調整 --- */
+        @media (max-width: 768px) {
+            header h1 { font-size: 1.2rem; }
+            header { padding: 0.8rem; }
+        }
+
+        /* --- 2. 圖片輪播區塊 (佔滿剩餘空間) --- */
+        #main-container {
+            flex-grow: 1;
+            position: relative;
+            width: 100%;
+            height: 0; /* 讓 flex-grow 控制高度 */
+            background: #000;
+        }
+
+        .swiper {
+            width: 100%;
+            height: 100%;
+        }
+
+        .swiper-slide {
+            text-align: center;
+            font-size: 18px;
+            background: #000;
+            /* 圖片置中 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 圖片樣式：保持比例，完整顯示 */
+        .swiper-slide img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; 
+            user-select: none; /* 防止圖片被選取反白 */
+        }
+
+        /* --- 狀態列 (顯示更新時間) --- */
+        #status-bar {
             position: absolute;
-            max-width: 100%; /* 寬度不超過螢幕 */
-            max-height: 100%; /* 高度不超過螢幕 */
-            object-fit: contain; /* 保持圖片比例 */
-            opacity: 0;
-            transition: opacity 1s ease-in-out; /* 淡入淡出動畫 */
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 20;
+            pointer-events: none;
         }
-        
-        /* 顯示中的圖片 */
-        .slide.active { opacity: 1; z-index: 2; }
-        
-        /* Loading 文字 */
-        #status { 
-            color: #888; font-family: sans-serif; position: absolute; bottom: 10px; right: 10px; font-size: 12px; z-index: 10; 
-        }
+
+        /* 自訂 Swiper 導覽按鈕顏色 */
+        .swiper-button-next, .swiper-button-prev { color: white; opacity: 0.7; }
+        .swiper-pagination-bullet { background: white; opacity: 0.5; }
+        .swiper-pagination-bullet-active { opacity: 1; background: #3498db; }
+
     </style>
 </head>
 <body>
 
-<div id="status">系統準備中...</div>
-<div id="slider">
+    <header>
+        <h1>澎湖縣音樂比賽成績公告</h1>
+    </header>
+
+    <div id="main-container">
+        <div class="swiper mySwiper">
+            <div class="swiper-wrapper" id="image-wrapper">
+                <div class="swiper-slide" style="color:white;">載入成績中...</div>
+            </div>
+            
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-pagination"></div>
+        </div>
+        
+        <div id="status-bar">系統連線中...</div>
     </div>
 
-<script>
-    // ==========================================
-    // ▼▼▼ 請修改這裡 ▼▼▼
-    const GITHUB_USERNAME = 'hfuhsu108';  // 例如: 'teacher-wang'
-    const REPO_NAME = 'music-score-board';          // 例如: 'music-score-board'
-    // ▲▲▲ 修改結束 ▲▲▲
-    // ==========================================
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
-    const FOLDER_NAME = 'photos';
-    const SLIDE_DURATION = 5000;    // 每張顯示 5 秒
-    const CHECK_INTERVAL = 120000;  // 每 120 秒 (2分鐘) 檢查一次新照片
-    
-    // 系統變數
-    let images = [];
-    let currentIndex = 0;
-    let slideInterval;
-    const slider = document.getElementById('slider');
-    const statusDiv = document.getElementById('status');
+    <script>
+        // ==========================================
+        // ▼▼▼ 請修改這裡 ▼▼▼
+        const GITHUB_USERNAME = 'hfuhsu108'; 
+        const REPO_NAME = 'music-score-board';         
+        // ▲▲▲ 修改結束 ▲▲▲
+        // ==========================================
 
-    // 1. 抓取圖片列表
-    async function fetchImages() {
-        // 加上時間戳記避免 API 快取 (timestamp trick)
-        const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FOLDER_NAME}?t=${new Date().getTime()}`;
+        const FOLDER_NAME = 'photos';
+        const CHECK_INTERVAL = 120000; // 每 2 分鐘檢查一次
         
-        try {
-            statusDiv.innerText = '正在檢查新成績...';
-            const response = await fetch(apiUrl);
-            
-            if (!response.ok) {
-                if(response.status === 403) throw new Error("API 存取過於頻繁");
-                if(response.status === 404) throw new Error("找不到資料夾或設定錯誤");
-                throw new Error("連線錯誤");
-            }
+        let currentImages = []; // 紀錄目前的圖片清單
+        let swiperInstance = null; // 紀錄 Swiper 物件
+        const imageWrapper = document.getElementById('image-wrapper');
+        const statusBar = document.getElementById('status-bar');
 
-            const data = await response.json();
-            
-            // 過濾出圖片檔
-            const currentImageList = data
-                .filter(file => file.name.match(/\.(jpg|jpeg|png|gif)$/i))
-                .map(file => file.download_url);
+        // 1. 初始化 Swiper (輪播設定)
+        function initSwiper() {
+            if (swiperInstance) return; // 如果已經有實例，就不重複建立
 
-            if (currentImageList.length === 0) {
-                statusDiv.innerText = '資料夾內尚無圖片';
-                return;
-            }
+            swiperInstance = new Swiper(".mySwiper", {
+                spaceBetween: 30,
+                centeredSlides: true,
+                loop: true, // 循環播放
+                grabCursor: true, // 滑鼠游標變成抓取手勢
+                
+                // 自動播放設定
+                autoplay: {
+                    delay: 5000, // 5秒換一張
+                    disableOnInteraction: false, // 用戶滑動後，是否停止自動播放 (設為 false 代表繼續播)
+                },
+                
+                // 導覽箭頭
+                navigation: {
+                    nextEl: ".swiper-button-next",
+                    prevEl: ".swiper-button-prev",
+                },
+                
+                // 下方圓點
+                pagination: {
+                    el: ".swiper-pagination",
+                    clickable: true, // 允許點擊圓點切換
+                },
 
-            // 比對是否有新圖片 (簡單比對數量或內容)
-            if (JSON.stringify(currentImageList) !== JSON.stringify(images)) {
-                console.log("發現新圖片清單，更新中...");
-                images = currentImageList;
-                renderSlider(); // 重新繪製
-                statusDiv.innerText = `已更新：共 ${images.length} 張`;
-            } else {
-                statusDiv.innerText = `監控中：共 ${images.length} 張 (無變動)`;
-            }
-
-        } catch (error) {
-            console.error(error);
-            statusDiv.innerText = `錯誤：${error.message}`;
+                // 鍵盤控制
+                keyboard: {
+                    enabled: true,
+                },
+            });
         }
-    }
 
-    // 2. 渲染圖片到 HTML
-    function renderSlider() {
-        slider.innerHTML = ''; // 清空
-        images.forEach((url, index) => {
-            const img = document.createElement('img');
-            img.src = url;
-            img.className = 'slide';
-            if (index === 0) img.className = 'slide active'; // 第一張先顯示
-            slider.appendChild(img);
-        });
+        // 2. 抓取圖片列表
+        async function fetchImages() {
+            const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FOLDER_NAME}?t=${new Date().getTime()}`;
+            
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error("API 回應異常");
 
-        // 重置輪播
-        currentIndex = 0;
-        startSlideshow();
-    }
+                const data = await response.json();
+                
+                // 過濾並取得圖片連結
+                const newImageList = data
+                    .filter(file => file.name.match(/\.(jpg|jpeg|png|gif)$/i))
+                    .map(file => file.download_url);
 
-    // 3. 輪播邏輯
-    function startSlideshow() {
-        if (slideInterval) clearInterval(slideInterval);
-        if (images.length <= 1) return; 
+                if (newImageList.length === 0) {
+                    statusBar.innerText = '資料夾內無圖片';
+                    return;
+                }
 
-        slideInterval = setInterval(() => {
-            const slides = document.querySelectorAll('.slide');
-            if(slides.length === 0) return;
+                // 檢查是否有更新 (比對 JSON 字串)
+                if (JSON.stringify(newImageList) !== JSON.stringify(currentImages)) {
+                    console.log("偵測到新圖片，更新畫面...");
+                    currentImages = newImageList;
+                    updateSlides(newImageList);
+                    
+                    const now = new Date();
+                    statusBar.innerText = `最後更新: ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+                } else {
+                    console.log("無新圖片");
+                }
 
-            slides[currentIndex].classList.remove('active');
-            currentIndex = (currentIndex + 1) % slides.length;
-            slides[currentIndex].classList.add('active');
-        }, SLIDE_DURATION);
-    }
+            } catch (error) {
+                console.error(error);
+                // 靜默失敗，不影響現有畫面，僅在 console 報錯
+            }
+        }
 
-    // 啟動
-    fetchImages();
-    // 設定定期檢查 (Polling)
-    setInterval(fetchImages, CHECK_INTERVAL);
+        // 3. 更新輪播內容
+        function updateSlides(images) {
+            // 如果 Swiper 正在運行，先銷毀它以便重建 (避免 DOM 衝突)
+            if (swiperInstance) {
+                swiperInstance.destroy(true, true);
+                swiperInstance = null;
+            }
 
-</script>
+            // 清空 HTML 並重新插入
+            imageWrapper.innerHTML = '';
+            
+            // 將最新的圖片放前面 (倒序排列)，或是依需求移除 .reverse()
+            // images.reverse().forEach(...) 
+            
+            images.forEach(url => {
+                const slideDiv = document.createElement('div');
+                slideDiv.className = 'swiper-slide';
+                
+                const img = document.createElement('img');
+                img.src = url;
+                img.loading = "lazy"; // 圖片懶加載優化效能
+                
+                slideDiv.appendChild(img);
+                imageWrapper.appendChild(slideDiv);
+            });
+
+            // 重新初始化 Swiper
+            initSwiper();
+        }
+
+        // 啟動程式
+        fetchImages();
+        setInterval(fetchImages, CHECK_INTERVAL);
+
+    </script>
 </body>
 </html>
