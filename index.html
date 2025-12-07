@@ -20,41 +20,29 @@
         header {
             background: #2c3e50;
             color: white;
-            padding: 10px 15px;
+            padding: 10px 20px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start; /* 靠左對齊 */
+            gap: 20px; /* 元素間距 */
             flex-shrink: 0;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             z-index: 50;
-            flex-wrap: wrap;
-            gap: 10px;
         }
-
-        .header-left { display: flex; align-items: center; gap: 15px; flex-grow: 1; }
         
-        h1 { margin: 0; font-size: 1.2rem; white-space: nowrap; }
+        h1 { margin: 0; font-size: 1.5rem; white-space: nowrap; letter-spacing: 1px;}
 
         /* 下拉選單樣式 */
         select#session-select {
             padding: 8px 12px;
             border-radius: 6px;
             border: 1px solid #ddd;
-            font-size: 1rem;
+            font-size: 1.1rem;
             background: #fff;
             color: #333;
             cursor: pointer;
             font-weight: bold;
-            max-width: 200px;
         }
-
-        /* QR Code 按鈕 */
-        #qr-btn {
-            background: #3498db; color: white; border: none;
-            padding: 8px 12px; border-radius: 6px; cursor: pointer;
-            font-size: 0.9rem; display: flex; align-items: center; gap: 5px;
-        }
-        #qr-btn:hover { background: #2980b9; }
 
         /* --- 2. 輪播區塊 --- */
         #main-container {
@@ -71,71 +59,99 @@
         .swiper-slide img {
             max-width: 100%; max-height: 100%;
             object-fit: contain;
-            padding-bottom: 40px; /* 留空間給標題 */
+            /* 預留底部空間給標題，避免重疊 */
+            padding-bottom: 50px; 
         }
 
         /* 圖片標題 (檔名顯示) */
         .slide-caption {
             position: absolute;
-            bottom: 20px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.6); /* 半透明黑底 */
             color: #fff;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-size: 1.2rem;
+            padding: 10px 30px;
+            border-radius: 30px;
+            font-size: 1.5rem;
+            font-weight: bold;
             white-space: nowrap;
             z-index: 10;
+            border: 1px solid rgba(255,255,255,0.3);
         }
 
-        /* --- QR Code 彈出視窗 --- */
-        #qr-modal {
-            display: none;
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
+        /* --- 3. 常駐 QR Code (右下角) --- */
+        #fixed-qr-box {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px 10px 5px 10px; /* 上右下左 */
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
             z-index: 100;
-            justify-content: center; align-items: center; flex-direction: column;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        #qr-modal.show { display: flex; }
-        #qr-box { background: white; padding: 20px; border-radius: 10px; text-align: center; }
-        #qr-code-img { margin-top: 10px; }
-        .close-hint { color: white; margin-top: 20px; cursor: pointer; border: 1px solid white; padding: 5px 15px; border-radius: 20px;}
-
-        /* --- 手機版調整 --- */
-        @media (max-width: 600px) {
-            h1 { display: none; } /* 手機版隱藏大標題，保留下拉選單 */
-            select#session-select { max-width: 100%; flex-grow: 1; }
-            .slide-caption { font-size: 1rem; bottom: 10px; padding: 5px 15px; width: 90%; text-align: center; }
+        
+        #fixed-qr-box span {
+            color: #333;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 5px;
+            display: block;
         }
 
-        /* 狀態列 */
+        /* --- 4. 狀態列 (左下角) --- */
         #status-bar {
-            position: absolute; bottom: 5px; right: 10px;
-            color: rgba(255,255,255,0.5); font-size: 12px; pointer-events: none; z-index: 20;
+            position: absolute; bottom: 10px; left: 10px;
+            background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px;
+            color: rgba(255,255,255,0.8); font-size: 14px; pointer-events: none; z-index: 20;
         }
-        .swiper-button-next, .swiper-button-prev { color: white; opacity: 0.6; }
-        .swiper-pagination-bullet { background: white; opacity: 0.5; }
+
+        /* --- 5. RWD 響應式調整 --- */
+        
+        /* 平板與手機版 */
+        @media (max-width: 900px) {
+            h1 { font-size: 1.2rem; }
+            #fixed-qr-box { 
+                /* 手機版隱藏 QR Code，避免擋住內容 */
+                display: none; 
+            }
+            .slide-caption {
+                font-size: 1.1rem; bottom: 40px; width: 80%; text-align: center;
+            }
+        }
+
+        @media (max-width: 600px) {
+            header { flex-direction: column; align-items: stretch; gap: 10px; }
+            h1 { text-align: center; }
+        }
+
+        /* Swiper 導覽點與箭頭微調 */
+        .swiper-button-next, .swiper-button-prev { color: white; opacity: 0.5; }
+        .swiper-button-next:hover, .swiper-button-prev:hover { opacity: 1; }
+        .swiper-pagination-bullet { background: white; opacity: 0.5; width: 10px; height: 10px; }
         .swiper-pagination-bullet-active { opacity: 1; background: #3498db; }
+
     </style>
 </head>
 <body>
 
     <header>
-        <div class="header-left">
-            <h1>澎湖縣音樂比賽成績</h1>
-            <select id="session-select">
-                <option value="1141209上午">12/09 (一) 上午場</option>
-                <option value="1141209下午">12/09 (一) 下午場</option>
-                <option value="1141210上午">12/10 (二) 上午場</option>
-                <option value="1141210下午">12/10 (二) 下午場</option>
-                <option value="1141211上午">12/11 (三) 上午場</option>
-                <option value="1141211下午">12/11 (三) 下午場</option>
-                <option value="1141212上午">12/12 (四) 上午場</option>
-                <option value="1141212下午">12/12 (四) 下午場</option>
-            </select>
-        </div>
-        <button id="qr-btn">📷 掃碼觀看</button>
+        <h1>澎湖縣音樂比賽成績</h1>
+        <select id="session-select">
+            <option value="1141209上午">12/09上午場</option>
+            <option value="1141209下午">12/09下午場</option>
+            <option value="1141210上午">12/10上午場</option>
+            <option value="1141210下午">12/10下午場</option>
+            <option value="1141211上午">12/11上午場</option>
+            <option value="1141211下午">12/11下午場</option>
+            <option value="1141212上午">12/12上午場</option>
+            <option value="1141212下午">12/12下午場</option>
+        </select>
     </header>
 
     <div id="main-container">
@@ -147,14 +163,13 @@
             <div class="swiper-button-prev"></div>
             <div class="swiper-pagination"></div>
         </div>
+        
         <div id="status-bar">準備中...</div>
-    </div>
 
-    <div id="qr-modal" onclick="this.classList.remove('show')">
-        <div id="qr-box" onclick="event.stopPropagation()"> <h3>掃描 QR Code 查看成績</h3>
+        <div id="fixed-qr-box">
             <div id="qrcode"></div>
+            <span>掃碼看成績</span>
         </div>
-        <div class="close-hint">點擊任意處關閉</div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
@@ -169,28 +184,25 @@
         // ==========================================
 
         const CHECK_INTERVAL = 60000; // 每 60 秒檢查一次
-        let currentFolder = document.getElementById('session-select').value; // 預設讀取第一個選項
-        let currentImagesHash = ""; // 用來比對內容是否變更
+        let currentFolder = document.getElementById('session-select').value; 
+        let currentImagesHash = ""; 
         let swiperInstance = null;
 
         const imageWrapper = document.getElementById('image-wrapper');
         const statusBar = document.getElementById('status-bar');
         const selectBox = document.getElementById('session-select');
 
-        // --- 1. QR Code 生成邏輯 ---
+        // --- 1. QR Code 生成 (常駐版) ---
         function generateQRCode() {
             const qrContainer = document.getElementById("qrcode");
-            qrContainer.innerHTML = ""; // 清空
+            qrContainer.innerHTML = ""; 
+            // 這裡設定 QR Code 大小
             new QRCode(qrContainer, {
-                text: window.location.href, // 當前網址
-                width: 200,
-                height: 200
+                text: window.location.href, 
+                width: 120, // 寬度
+                height: 120 // 高度
             });
         }
-        
-        document.getElementById('qr-btn').addEventListener('click', () => {
-            document.getElementById('qr-modal').classList.add('show');
-        });
         
         // 頁面載入時生成 QR Code
         generateQRCode();
@@ -198,19 +210,23 @@
         // --- 2. 監聽下拉選單變更 ---
         selectBox.addEventListener('change', (e) => {
             currentFolder = e.target.value;
-            currentImagesHash = ""; // 清空 hash 以便強制重新載入
+            currentImagesHash = ""; 
             imageWrapper.innerHTML = '<div class="swiper-slide" style="color:white;">切換場次讀取中...</div>';
-            fetchImages(); // 立即讀取
+            fetchImages(); 
         });
 
         // --- 3. 初始化 Swiper ---
         function initSwiper() {
             if (swiperInstance) return;
             swiperInstance = new Swiper(".mySwiper", {
-                spaceBetween: 30,
+                spaceBetween: 50,
                 centeredSlides: true,
                 loop: true,
-                autoplay: { delay: 5000, disableOnInteraction: false },
+                // 自動播放設定
+                autoplay: { 
+                    delay: 8000, // 改成 8 秒一張，讓家長有時間掃描或看成績
+                    disableOnInteraction: false 
+                },
                 navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
                 pagination: { el: ".swiper-pagination", clickable: true },
                 keyboard: { enabled: true },
@@ -219,7 +235,6 @@
 
         // --- 4. 抓取圖片 ---
         async function fetchImages() {
-            // 注意：資料夾名稱若有中文，需 encodeURIComponent
             const folderPath = `photos/${currentFolder}`;
             const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${encodeURIComponent(folderPath)}?t=${new Date().getTime()}`;
             
@@ -237,12 +252,12 @@
 
                 const data = await response.json();
                 
-                // 整理圖片資料：包含 URL 和 檔名
+                // 整理圖片資料
                 const newImages = data
                     .filter(file => file.name.match(/\.(jpg|jpeg|png|gif)$/i))
                     .map(file => ({
                         url: file.download_url,
-                        name: file.name.replace(/\.[^/.]+$/, "") // 去除副檔名
+                        name: file.name.replace(/\.[^/.]+$/, "") 
                     }));
 
                 if (newImages.length === 0) {
@@ -250,7 +265,7 @@
                     return;
                 }
 
-                // 檢查是否需要更新 (將物件轉字串比對)
+                // 檢查是否更新
                 const newHash = JSON.stringify(newImages);
                 if (newHash !== currentImagesHash) {
                     console.log(`更新場次: ${currentFolder}`);
@@ -263,7 +278,6 @@
 
             } catch (error) {
                 console.error(error);
-                // 保持原畫面不變
             }
         }
 
@@ -276,22 +290,21 @@
 
             imageWrapper.innerHTML = '';
             
-            // 建議倒序排列，讓最新上傳的顯示在最前面
+            // 倒序排列：最新的在最前面
             images.reverse().forEach(imgData => {
                 const slideDiv = document.createElement('div');
                 slideDiv.className = 'swiper-slide';
                 
-                // 圖片標題 (檔名)
                 const captionDiv = document.createElement('div');
                 captionDiv.className = 'slide-caption';
-                captionDiv.innerText = imgData.name; // 例如：國中組長笛個人賽
+                captionDiv.innerText = imgData.name; 
 
                 const img = document.createElement('img');
                 img.src = imgData.url;
                 img.loading = "lazy";
                 
-                slideDiv.appendChild(captionDiv); // 先加標題
-                slideDiv.appendChild(img);        // 再加圖片
+                slideDiv.appendChild(captionDiv); 
+                slideDiv.appendChild(img);        
                 imageWrapper.appendChild(slideDiv);
             });
 
