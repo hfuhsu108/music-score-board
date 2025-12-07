@@ -35,35 +35,74 @@
             font-weight: bold; max-width: 200px;
         }
 
+        /* 右上角按鈕 (手機版備用) */
         #qr-btn {
             background: #3498db; color: white; border: none;
             padding: 8px 12px; border-radius: 6px; cursor: pointer;
             font-size: 0.9rem; display: flex; align-items: center; gap: 5px;
         }
+        #qr-btn:hover { background: #2980b9; }
 
         /* --- 2. 輪播區塊 --- */
         #main-container {
             flex-grow: 1; position: relative; width: 100%; height: 0; background: #000;
         }
         .swiper { width: 100%; height: 100%; }
+        
         .swiper-slide {
             display: flex; justify-content: center; align-items: center;
             background: #000; position: relative;
         }
-        /* 圖片與 PDF 轉換後的 Canvas */
+        
+        /* 圖片與 Canvas 設定 */
         .swiper-slide img, .swiper-slide canvas {
             max-width: 100%; max-height: 100%;
-            object-fit: contain; padding-bottom: 40px;
+            object-fit: contain; padding-bottom: 40px; /* 避開標題 */
         }
 
         /* 標題 (檔名顯示) */
         .slide-caption {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7); color: #fff; padding: 8px 20px;
-            border-radius: 20px; font-size: 1.2rem; white-space: nowrap; z-index: 10;
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7); color: #fff; padding: 10px 25px;
+            border-radius: 30px; font-size: 1.4rem; white-space: nowrap; z-index: 10;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
 
-        /* --- QR Code 彈窗 --- */
+        /* --- 3. 常駐 QR Code (左下角) --- */
+        #fixed-qr {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            padding: 10px 10px 5px 10px; /* 下方留少一點 */
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            z-index: 90;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #fixed-qr-caption {
+            color: #333; font-weight: bold; font-size: 14px; margin-top: 5px; margin-bottom: 0;
+        }
+
+        /* --- RWD 調整 --- */
+        @media (max-width: 768px) {
+            h1 { display: none; } /* 手機隱藏標題 */
+            select#session-select { max-width: 100%; flex-grow: 1; }
+            .slide-caption { font-size: 1rem; bottom: 10px; width: 90%; text-align: center; }
+            
+            /* 手機版隱藏左下角常駐 QR Code (以免擋住成績)，改用右上角按鈕 */
+            #fixed-qr { display: none; } 
+        }
+
+        /* --- 狀態與 QR 彈窗 --- */
+        #status-bar {
+            position: absolute; bottom: 5px; right: 10px;
+            color: rgba(255,255,255,0.5); font-size: 12px; pointer-events: none; z-index: 20;
+        }
+        
         #qr-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.8); z-index: 100;
@@ -72,21 +111,11 @@
         #qr-modal.show { display: flex; }
         #qr-box { background: white; padding: 20px; border-radius: 10px; text-align: center; }
         .close-hint { color: white; margin-top: 20px; cursor: pointer; border: 1px solid white; padding: 5px 15px; border-radius: 20px;}
-
-        /* --- RWD --- */
-        @media (max-width: 600px) {
-            h1 { display: none; }
-            select#session-select { max-width: 100%; flex-grow: 1; }
-            .slide-caption { font-size: 1rem; bottom: 10px; width: 90%; text-align: center; }
-        }
-
-        #status-bar {
-            position: absolute; bottom: 5px; right: 10px;
-            color: rgba(255,255,255,0.5); font-size: 12px; pointer-events: none; z-index: 20;
-        }
+        
         .swiper-button-next, .swiper-button-prev { color: white; opacity: 0.6; }
         .swiper-pagination-bullet { background: white; opacity: 0.5; }
         .swiper-pagination-bullet-active { opacity: 1; background: #3498db; }
+
     </style>
 </head>
 <body>
@@ -95,17 +124,17 @@
         <div class="header-left">
             <h1>澎湖縣音樂比賽成績</h1>
             <select id="session-select">
-                <option value="1141209上午">12/09上午場</option>
-                <option value="1141209下午">12/09下午場</option>
-                <option value="1141210上午">12/10上午場</option>
-                <option value="1141210下午">12/10下午場</option>
-                <option value="1141211上午">12/11上午場</option>
-                <option value="1141211下午">12/11下午場</option>
-                <option value="1141212上午">12/12上午場</option>
-                <option value="1141212下午">12/12下午場</option>
+                <option value="1141209上午">12/09 (一) 上午場</option>
+                <option value="1141209下午">12/09 (一) 下午場</option>
+                <option value="1141210上午">12/10 (二) 上午場</option>
+                <option value="1141210下午">12/10 (二) 下午場</option>
+                <option value="1141211上午">12/11 (三) 上午場</option>
+                <option value="1141211下午">12/11 (三) 下午場</option>
+                <option value="1141212上午">12/12 (四) 上午場</option>
+                <option value="1141212下午">12/12 (四) 下午場</option>
             </select>
         </div>
-        <button id="qr-btn">📷 掃碼觀看</button>
+        <button id="qr-btn">📷 掃碼</button>
     </header>
 
     <div id="main-container">
@@ -120,10 +149,15 @@
         <div id="status-bar">準備中...</div>
     </div>
 
+    <div id="fixed-qr">
+        <div id="fixed-qr-code"></div>
+        <p id="fixed-qr-caption">掃碼查看</p>
+    </div>
+
     <div id="qr-modal" onclick="this.classList.remove('show')">
         <div id="qr-box" onclick="event.stopPropagation()">
             <h3>掃描 QR Code 查看成績</h3>
-            <div id="qrcode"></div>
+            <div id="modal-qr-code"></div>
         </div>
         <div class="close-hint">點擊任意處關閉</div>
     </div>
@@ -135,28 +169,31 @@
     <script>
         // ==========================================
         // ▼▼▼ 請修改這裡 ▼▼▼
-        const GITHUB_USERNAME = 'hfuhsu108'; 
-        const REPO_NAME = 'music-score-board';         
+        const GITHUB_USERNAME = '您的GitHub帳號'; 
+        const REPO_NAME = '您的專案名稱';         
         // ▲▲▲ 修改結束 ▲▲▲
         // ==========================================
 
-        // 設定 PDF.js Worker
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         const CHECK_INTERVAL = 60000;
         let currentFolder = document.getElementById('session-select').value;
         let currentImagesHash = "";
         let swiperInstance = null;
-
+        
         const imageWrapper = document.getElementById('image-wrapper');
         const statusBar = document.getElementById('status-bar');
         const selectBox = document.getElementById('session-select');
 
-        // --- QR Code ---
-        new QRCode(document.getElementById("qrcode"), { text: window.location.href, width: 200, height: 200 });
+        // --- 產生 QR Code ---
+        // 1. 產生常駐版 (左下角)
+        new QRCode(document.getElementById("fixed-qr-code"), { text: window.location.href, width: 120, height: 120 });
+        
+        // 2. 產生彈窗版 (按鈕觸發)
+        new QRCode(document.getElementById("modal-qr-code"), { text: window.location.href, width: 200, height: 200 });
         document.getElementById('qr-btn').addEventListener('click', () => document.getElementById('qr-modal').classList.add('show'));
 
-        // --- 切換場次監聽 ---
+        // --- 監聽切換 ---
         selectBox.addEventListener('change', (e) => {
             currentFolder = e.target.value;
             currentImagesHash = "";
@@ -164,21 +201,21 @@
             fetchFiles();
         });
 
-        // --- 初始化 Swiper ---
+        // --- Swiper 初始化 ---
         function initSwiper() {
             if (swiperInstance) return;
             swiperInstance = new Swiper(".mySwiper", {
                 spaceBetween: 30,
                 centeredSlides: true,
                 loop: true,
-                autoplay: { delay: 8000, disableOnInteraction: false }, // PDF 可能字較多，停留改為 8 秒
+                autoplay: { delay: 8000, disableOnInteraction: false },
                 navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
                 pagination: { el: ".swiper-pagination", clickable: true },
                 keyboard: { enabled: true },
             });
         }
 
-        // --- 核心：抓取並處理檔案 ---
+        // --- 讀取檔案 ---
         async function fetchFiles() {
             const folderPath = `photos/${currentFolder}`;
             const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${encodeURIComponent(folderPath)}?t=${new Date().getTime()}`;
@@ -192,12 +229,11 @@
 
                 const data = await response.json();
                 
-                // 過濾圖片和 PDF
                 const validFiles = data
                     .filter(file => file.name.match(/\.(jpg|jpeg|png|gif|pdf)$/i))
                     .map(file => ({
                         url: file.download_url,
-                        name: file.name.replace(/\.[^/.]+$/, ""), // 去除副檔名
+                        name: file.name.replace(/\.[^/.]+$/, ""),
                         type: file.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image'
                     }));
 
@@ -223,39 +259,34 @@
             if (swiperInstance) { swiperInstance.destroy(); swiperInstance = null; }
         }
 
-        // --- 渲染畫面 (包含 PDF 轉圖邏輯) ---
+        // --- 渲染與轉檔 ---
         async function renderSlides(files) {
             if (swiperInstance) { swiperInstance.destroy(true, true); swiperInstance = null; }
             imageWrapper.innerHTML = '';
 
-            // 倒序排列
             const reversedFiles = files.reverse();
 
-            // 依序處理每個檔案
             for (const file of reversedFiles) {
                 const slideDiv = document.createElement('div');
                 slideDiv.className = 'swiper-slide';
 
-                // 標題
                 const captionDiv = document.createElement('div');
                 captionDiv.className = 'slide-caption';
                 captionDiv.innerText = file.name;
                 slideDiv.appendChild(captionDiv);
 
                 if (file.type === 'image') {
-                    // 一般圖片
                     const img = document.createElement('img');
                     img.src = file.url;
                     img.loading = "lazy";
                     slideDiv.appendChild(img);
                 } else {
-                    // PDF 處理 (轉成 Canvas)
                     try {
                         const loadingTask = pdfjsLib.getDocument(file.url);
                         const pdf = await loadingTask.promise;
-                        const page = await pdf.getPage(1); // 只抓取第一頁
+                        const page = await pdf.getPage(1);
                         
-                        const scale = 2.0; // 提高解析度
+                        const scale = 2.0; 
                         const viewport = page.getViewport({ scale: scale });
 
                         const canvas = document.createElement('canvas');
@@ -263,23 +294,14 @@
                         canvas.height = viewport.height;
                         canvas.width = viewport.width;
 
-                        const renderContext = {
-                            canvasContext: context,
-                            viewport: viewport
-                        };
-                        await page.render(renderContext).promise;
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
                         
-                        // 為了讓 CSS object-fit 生效，設定 canvas 樣式
                         canvas.style.maxWidth = "100%";
                         canvas.style.maxHeight = "100%";
                         
                         slideDiv.appendChild(canvas);
                     } catch (err) {
-                        console.error("PDF Render Error:", err);
-                        const errorMsg = document.createElement('div');
-                        errorMsg.innerText = "PDF 預覽失敗，請確認檔案";
-                        errorMsg.style.color = "red";
-                        slideDiv.appendChild(errorMsg);
+                        console.error("PDF Error", err);
                     }
                 }
                 imageWrapper.appendChild(slideDiv);
