@@ -23,8 +23,8 @@
             padding: 10px 20px;
             display: flex;
             align-items: center;
-            justify-content: flex-start; /* 靠左對齊 */
-            gap: 20px; /* 元素間距 */
+            justify-content: flex-start;
+            gap: 20px;
             flex-shrink: 0;
             box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             z-index: 50;
@@ -56,11 +56,9 @@
             background: #000; position: relative;
         }
 
-        /* 修改這裡：增加對 canvas (PDF) 的支援 */
         .swiper-slide img, .swiper-slide canvas {
             max-width: 100%; max-height: 100%;
             object-fit: contain;
-            /* 預留底部空間給標題，避免重疊 */
             padding-bottom: 50px; 
         }
 
@@ -70,7 +68,7 @@
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.6); /* 半透明黑底 */
+            background: rgba(0, 0, 0, 0.6);
             color: #fff;
             padding: 10px 30px;
             border-radius: 30px;
@@ -87,7 +85,7 @@
             bottom: 20px;
             right: 20px;
             background: white;
-            padding: 10px 10px 5px 10px; /* 上右下左 */
+            padding: 10px 10px 5px 10px;
             border-radius: 10px;
             box-shadow: 0 0 15px rgba(0,0,0,0.5);
             z-index: 100;
@@ -113,14 +111,9 @@
         }
 
         /* --- 5. RWD 響應式調整 --- */
-        
-        /* 平板與手機版 */
         @media (max-width: 900px) {
             h1 { font-size: 1.2rem; }
-            #fixed-qr-box { 
-                /* 手機版隱藏 QR Code，避免擋住內容 */
-                display: none; 
-            }
+            #fixed-qr-box { display: none; }
             .slide-caption {
                 font-size: 1.1rem; bottom: 40px; width: 80%; text-align: center;
             }
@@ -131,7 +124,6 @@
             h1 { text-align: center; }
         }
 
-        /* Swiper 導覽點與箭頭微調 */
         .swiper-button-next, .swiper-button-prev { color: white; opacity: 0.5; }
         .swiper-button-next:hover, .swiper-button-prev:hover { opacity: 1; }
         .swiper-pagination-bullet { background: white; opacity: 0.5; width: 10px; height: 10px; }
@@ -185,10 +177,14 @@
         // ▲▲▲ 修改結束 ▲▲▲
         // ==========================================
 
-        // 設定 PDF.js Worker
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-        const CHECK_INTERVAL = 60000; // 每 60 秒檢查一次
+        const CHECK_INTERVAL = 60000; 
+        
+        // --- 關鍵修正 1：引入「請求 ID」變數 ---
+        // 每次切換場次，這個 ID 就會變更，用來作廢舊的任務
+        let activeRequestId = 0; 
+        
         let currentFolder = document.getElementById('session-select').value; 
         let currentImagesHash = ""; 
         let swiperInstance = null;
@@ -197,26 +193,29 @@
         const statusBar = document.getElementById('status-bar');
         const selectBox = document.getElementById('session-select');
 
-        // --- 1. QR Code 生成 (常駐版) ---
+        // --- 1. QR Code ---
         function generateQRCode() {
             const qrContainer = document.getElementById("qrcode");
             qrContainer.innerHTML = ""; 
             new QRCode(qrContainer, {
                 text: window.location.href, 
-                width: 120, // 寬度
-                height: 120 // 高度
+                width: 120, height: 120
             });
         }
-        
-        // 頁面載入時生成 QR Code
         generateQRCode();
 
         // --- 2. 監聽下拉選單變更 ---
         selectBox.addEventListener('change', (e) => {
             currentFolder = e.target.value;
             currentImagesHash = ""; 
+            
+            // --- 關鍵修正 2：切換時更新 ID ---
+            activeRequestId++; // 號碼牌+1，之前的號碼牌宣告作廢
+            
             imageWrapper.innerHTML = '<div class="swiper-slide" style="color:white;">切換場次讀取中...</div>';
-            fetchImages(); 
+            
+            // 呼叫 fetchImages，並傳入當下的 ID
+            fetchImages(activeRequestId); 
         });
 
         // --- 3. 初始化 Swiper ---
@@ -226,25 +225,30 @@
                 spaceBetween: 50,
                 centeredSlides: true,
                 loop: true,
-                // 自動播放設定
-                autoplay: { 
-                    delay: 8000, // 8 秒一張
-                    disableOnInteraction: false 
-                },
+                autoplay: { delay: 8000, disableOnInteraction: false },
                 navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
                 pagination: { el: ".swiper-pagination", clickable: true },
                 keyboard: { enabled: true },
             });
         }
 
-        // --- 4. 抓取圖片/PDF ---
-        async function fetchImages() {
+        // --- 4. 抓取圖片/PDF (加上防止衝突邏輯) ---
+        async function fetchImages(requestId) {
+            // 如果沒傳入 ID (例如是 setInterval 呼叫的)，就用當前最新的 ID
+            if (requestId === undefined) requestId = activeRequestId;
+
+            // 第一道防線：如果函式剛開始執行，發現 ID 已經過期，直接結束
+            if (requestId !== activeRequestId) return;
+
             const folderPath = `photos/${currentFolder}`;
             const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${encodeURIComponent(folderPath)}?t=${new Date().getTime()}`;
             
             try {
                 const response = await fetch(apiUrl);
                 
+                // 再次檢查：fetch 回來花了一些時間，這中間使用者有沒有切換場次？
+                if (requestId !== activeRequestId) return; 
+
                 if (response.status === 404) {
                     imageWrapper.innerHTML = '<div class="swiper-slide" style="color:#aaa;">此場次尚無成績公告</div>';
                     statusBar.innerText = '尚無資料';
@@ -255,8 +259,6 @@
                 if (!response.ok) throw new Error("API Error");
 
                 const data = await response.json();
-                
-                // 整理資料：支援圖片與 PDF
                 const validFiles = data
                     .filter(file => file.name.match(/\.(jpg|jpeg|png|gif|pdf)$/i))
                     .map(file => ({
@@ -270,15 +272,17 @@
                     return;
                 }
 
-                // 檢查是否更新
                 const newHash = JSON.stringify(validFiles);
                 if (newHash !== currentImagesHash) {
                     console.log(`更新場次: ${currentFolder}`);
                     currentImagesHash = newHash;
-                    await updateSlides(validFiles);
+                    // 將 ID 傳遞給渲染函式
+                    await updateSlides(validFiles, requestId);
                     
-                    const now = new Date();
-                    statusBar.innerText = `最後更新: ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+                    if (requestId === activeRequestId) { // 最後更新時間只在正確的 ID 下顯示
+                        const now = new Date();
+                        statusBar.innerText = `最後更新: ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+                    }
                 }
 
             } catch (error) {
@@ -287,7 +291,8 @@
         }
 
         // --- 5. 更新畫面 (包含 PDF 轉圖) ---
-        async function updateSlides(files) {
+        async function updateSlides(files, requestId) {
+            // 銷毀舊的 Swiper
             if (swiperInstance) {
                 swiperInstance.destroy(true, true);
                 swiperInstance = null;
@@ -295,33 +300,42 @@
 
             imageWrapper.innerHTML = '';
             
-            // 倒序排列，並逐一處理
             const reversedFiles = files.reverse();
 
+            // 進入最花時間的迴圈
             for (const file of reversedFiles) {
+                
+                // --- 關鍵修正 3：最核心的檢查點 ---
+                // 每處理一張圖之前，都要問：「現在使用者還是在這個場次嗎？」
+                // 如果 requestId 不等於 activeRequestId，代表使用者切換了，立刻停止！
+                if (requestId !== activeRequestId) {
+                    console.log("偵測到場次切換，停止舊的渲染任務");
+                    return; // 直接跳出函式，不執行後面的 appendChild
+                }
+
                 const slideDiv = document.createElement('div');
                 slideDiv.className = 'swiper-slide';
                 
-                // 標題
                 const captionDiv = document.createElement('div');
                 captionDiv.className = 'slide-caption';
                 captionDiv.innerText = file.name; 
                 slideDiv.appendChild(captionDiv); 
 
                 if (file.type === 'image') {
-                    // 處理一般圖片
                     const img = document.createElement('img');
                     img.src = file.url;
                     img.loading = "lazy";
                     slideDiv.appendChild(img);
                 } else {
-                    // 處理 PDF (轉為 Canvas)
                     try {
+                        // PDF 轉檔非常花時間 (await)
                         const loadingTask = pdfjsLib.getDocument(file.url);
                         const pdf = await loadingTask.promise;
                         const page = await pdf.getPage(1);
                         
-                        // 設定解析度 2.5 倍
+                        // 轉檔完成後，在寫入 DOM 之前，再檢查一次最保險
+                        if (requestId !== activeRequestId) return; 
+
                         const scale = 2.5;
                         const viewport = page.getViewport({ scale: scale });
                         
@@ -332,29 +346,27 @@
                         
                         await page.render({ canvasContext: context, viewport: viewport }).promise;
                         
-                        // 讓 CSS 控制大小
                         canvas.style.maxWidth = "100%";
                         canvas.style.maxHeight = "100%";
-                        
                         slideDiv.appendChild(canvas);
                     } catch (err) {
                         console.error("PDF Render Error:", err);
-                        const errDiv = document.createElement('div');
-                        errDiv.style.color = "red";
-                        errDiv.innerText = "PDF 預覽失敗";
-                        slideDiv.appendChild(errDiv);
                     }
                 }
                 
+                // 最後一步：加入畫面
                 imageWrapper.appendChild(slideDiv);
             }
 
-            initSwiper();
+            // 全部跑完確定沒被中斷，才啟動 Swiper
+            if (requestId === activeRequestId) {
+                initSwiper();
+            }
         }
 
         // 啟動
-        fetchImages();
-        setInterval(fetchImages, CHECK_INTERVAL);
+        fetchImages(activeRequestId);
+        setInterval(() => fetchImages(activeRequestId), CHECK_INTERVAL);
 
     </script>
 </body>
