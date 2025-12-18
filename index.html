@@ -232,22 +232,34 @@
             });
         }
 
-        // --- 4. 抓取圖片/PDF (加上防止衝突邏輯) ---
+// --- 4. 抓取圖片/PDF (加上 Token 驗證版) ---
         async function fetchImages(requestId) {
-            // 如果沒傳入 ID (例如是 setInterval 呼叫的)，就用當前最新的 ID
             if (requestId === undefined) requestId = activeRequestId;
-
-            // 第一道防線：如果函式剛開始執行，發現 ID 已經過期，直接結束
             if (requestId !== activeRequestId) return;
 
             const folderPath = `photos/${currentFolder}`;
             const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${encodeURIComponent(folderPath)}?t=${new Date().getTime()}`;
             
+            // ▼▼▼ 請將剛剛申請的 Token 貼在這裡 ▼▼▼
+            const MY_TOKEN = 'ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'; 
+            // ▲▲▲ 例如: 'ghp_A1b2C3d4...' (請保留引號)
+
             try {
-                const response = await fetch(apiUrl);
+                // 修改這裡：加入 headers 傳送 Token
+                const response = await fetch(apiUrl, {
+                    headers: {
+                        'Authorization': `token ${MY_TOKEN}`
+                    }
+                });
                 
-                // 再次檢查：fetch 回來花了一些時間，這中間使用者有沒有切換場次？
                 if (requestId !== activeRequestId) return; 
+
+                // 如果加入 Token 後還是 403，代表 Token 權限有誤或沒貼好
+                if (response.status === 403) {
+                    console.error("API 流量超限或 Token 無效");
+                    statusBar.innerText = '系統流量管制中，請稍候...';
+                    return;
+                }
 
                 if (response.status === 404) {
                     imageWrapper.innerHTML = '<div class="swiper-slide" style="color:#aaa;">此場次尚無成績公告</div>';
@@ -276,10 +288,9 @@
                 if (newHash !== currentImagesHash) {
                     console.log(`更新場次: ${currentFolder}`);
                     currentImagesHash = newHash;
-                    // 將 ID 傳遞給渲染函式
                     await updateSlides(validFiles, requestId);
                     
-                    if (requestId === activeRequestId) { // 最後更新時間只在正確的 ID 下顯示
+                    if (requestId === activeRequestId) { 
                         const now = new Date();
                         statusBar.innerText = `最後更新: ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
                     }
